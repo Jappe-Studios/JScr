@@ -66,10 +66,10 @@ namespace JScr::Frontend
         void abstract() const override {}
 
         const string& FileDir() const         { return m_fileDir; }
-        const std::vector<Stmt>& Body() const { return m_body; }
+        std::vector<Stmt>& Body()             { return m_body; }
     private:
         const string& m_fileDir;
-        const std::vector<Stmt>& m_body;
+        std::vector<Stmt> m_body;
     };
 
     class ImportStmt : public Stmt

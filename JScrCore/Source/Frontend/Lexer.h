@@ -73,7 +73,7 @@ namespace JScr::Frontend
             return c >= bounds[0] && c <= bounds[1];
         }
 
-        static std::map<const Lexer::Token&, Range>& Tokenize(const std::string& filedir);
+        static std::map<Lexer::Token, Range>& Tokenize(const std::string& filedir);
 
 	private:
 		Lexer() {}

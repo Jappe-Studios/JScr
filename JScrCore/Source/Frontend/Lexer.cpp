@@ -24,7 +24,7 @@ namespace JScr::Frontend
 		{ "as", TokenType::AS },
 	};
 
-	std::map<const Lexer::Token&, Range>& Lexer::Tokenize(const std::string& filedir)
+	std::map<Lexer::Token, Range>& Lexer::Tokenize(const std::string& filedir)
 	{
 		std::ifstream file(filedir);
 
@@ -33,7 +33,7 @@ namespace JScr::Frontend
 			throw std::runtime_error("Failed to open input file at \"" + filedir + "\".");
 		}
 
-		std::map<const Lexer::Token&, Range> tokens = {};
+		std::map<Lexer::Token, Range> tokens = {};
 
 		unsigned int line = 1, col = 0;
 
@@ -65,7 +65,7 @@ namespace JScr::Frontend
 
 		auto Push = [&](Lexer::Token tk)
 		{
-			tokens.insert({ tk, Range(Vector2i(line, col), Vector2i(line, col + tk.Value().length())) });
+			tokens.insert({ std::move(tk), Range(Vector2i(line, col), Vector2i(line, col + tk.Value().length())) });
 		};
 
 		// Will return true if this is the beginning or the end of a comment.

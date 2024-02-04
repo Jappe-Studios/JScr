@@ -1,9 +1,13 @@
 #pragma once
+#include <vector>
+#include <functional>
+#include <any>
 #include "Ast.h"
 #include "../Runtime/Types.h"
 #include "Lexer.h"
 #include "../Utils/Vector.h"
 #include "../Utils/VectorUtils.h"
+#include "../Utils/MapUtils.h"
 #include "SyntaxException.h"
 
 namespace JScr::Frontend
@@ -107,7 +111,7 @@ namespace JScr::Frontend
         std::uint8_t m_outline = 0;
 
     private:
-        bool NotEof() const { return m_tokens[0].Type() != Lexer::TokenType::EOF_TOKEN; }
+        bool NotEOF() const { return m_tokens[0].Type() != Lexer::TokenType::EOF_TOKEN; }
 
         Lexer::Token At() const { return m_tokens[0]; }
 
@@ -134,6 +138,38 @@ namespace JScr::Frontend
         }
 
     private:
-        Stmt ParseStmt();
+        Stmt& ParseStmt();
+        Stmt& ParseImportStmt();
+        ParseTypeCtx& ParseType();
+        Stmt& ParseTypePost();
+        Stmt& ParseFnDeclaration(ParseTypeCtxVar type, Lexer::Token name);
+        vector<VarDeclaration>& ParseDeclarativeArgs();
+        vector<VarDeclaration>& ParseDeclarativeArgsList();
+        Stmt& ParseVarDeclaration(ParseTypeCtxVar type, Lexer::Token name);
+        Stmt& ParseObjectStmt(vector<AnnotationUsageDeclaration> annotations, std::string typeIdent, bool annotation = false);
+        Stmt& ParseEnumStmt(vector<AnnotationUsageDeclaration> annotations, std::string typeIdent);
+        Stmt& ParseReturnStmt();
+        Stmt& ParseDeleteStmt();
+        Stmt& ParseIfElseStmt();
+        Stmt& ParseWhileStmt();
+        Stmt& ParseForStmt();
+
+        Expr& ParseExpr();
+        Expr& ParseAssignmentExpr();
+        Expr& ParseObjectConstructorExpr(std::any targetVariableIdent, bool tviAsType = false);
+        Expr& ParseArrayExpr();
+        Expr& ParseLambdaFuncExpr();
+        Expr& ParseBoolExpr();
+        Expr& ParseComparisonExpr();
+        Expr& ParseAdditiveExpr();
+        Expr& ParseMultiplicitaveExpr();
+        Expr& ParseUnaryExpr();
+        Expr& ParseCallMemberExpr();
+        Expr& ParseIndexExpr(Expr caller);
+        Expr& ParseCallExpr(Expr caller);
+        vector<Expr>& ParseArgs(std::function<void> preEnd);
+        vector<Expr>& ParseArgumentsList();
+        Expr& ParseMemberExpr();
+        Expr& ParsePrimaryExpr();
     };
 }

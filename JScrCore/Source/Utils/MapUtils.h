@@ -21,7 +21,40 @@ namespace JScr::Utils
         }
 
         template <typename K, typename V>
+        static std::vector<K> KeysOf(const std::unordered_map<K, V>& myMap)
+        {
+            std::vector<K> keys;
+            for (const auto& pair : myMap)
+            {
+                keys.push_back(pair.first);
+            }
+            return std::move(keys);
+        }
+
+        template <typename K, typename V>
         static std::vector<V> ValuesOf(const std::unordered_map<K, V>& myMap)
+        {
+            std::vector<V> values;
+            for (const auto& pair : myMap)
+            {
+                values.push_back(pair.second);
+            }
+            return std::move(values);
+        }
+
+        template <typename K, typename V>
+        static std::vector<K> KeysOf(const std::map<K, V>& myMap)
+        {
+            std::vector<K> keys;
+            for (auto it = myMap.begin(); it != myMap.end(); ++it)
+            {
+                keys.push_back(it->first);
+            }
+            return std::move(keys);
+        }
+
+        template <typename K, typename V>
+        static std::vector<V> ValuesOf(const std::map<K, V>& myMap)
         {
             std::vector<V> values;
             for (const auto& pair : myMap)
