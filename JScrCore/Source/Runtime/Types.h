@@ -2,12 +2,11 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+using std::vector;
+using std::string;
 
 namespace JScr::Runtime
 {
-	using std::vector;
-	using std::string;
-
 	class Types
 	{
 	public:
@@ -20,6 +19,8 @@ namespace JScr::Runtime
 			const string& Data() const { return m_data; }
 
 			const bool isLambda;
+
+			Types::Type CopyWithLambdaTypes(const vector<Type>& lambdaTypes) { return Type(this->m_uid, lambdaTypes, this->m_child, this->m_data); };
 
 		public:
 			static Type Array(Type of, vector<Type> lambdaTypes = {})

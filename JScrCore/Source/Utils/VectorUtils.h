@@ -10,7 +10,7 @@ namespace JScr::Utils
         template <typename T>
         static bool Contains(const std::vector<T>& vec, const T& value)
         {
-            return std::find(vec.begin(), vec.end(), value) != myVector.end();
+            return std::find(vec.begin(), vec.end(), value) != vec.end();
         }
 
         template <typename T>

@@ -4,11 +4,12 @@
 #include <any>
 #include "../Runtime/Types.h"
 
+using std::string;
+using std::any;
+using namespace JScr::Runtime;
+
 namespace JScr::Frontend
 {
-    using std::string;
-    using std::any;
-
     enum NodeType
     {
         // STATEMENTS
@@ -46,6 +47,9 @@ namespace JScr::Frontend
         IDENTIFIER,
         BINARY_EXPR,
     };
+
+    class Expr;
+    class Property;
 
     class Stmt
     {
@@ -387,6 +391,17 @@ namespace JScr::Frontend
         const string& m_operator;
     };
 
+    class Identifier : public Expr
+    {
+    public:
+        Identifier(const string& symbol) : Expr(NodeType::IDENTIFIER), m_symbol(symbol) {}
+        void abstract() const override {}
+
+        const string& Symbol() const { return m_symbol; }
+    private:
+        const string& m_symbol;
+    };
+
     class LambdaExpr : public Expr
     {
     public:
@@ -400,17 +415,6 @@ namespace JScr::Frontend
         const std::vector<Identifier>& m_paramIdents;
         const std::vector<Stmt>& m_body;
         const bool& m_instantReturn;
-    };
-
-    class Identifier : public Expr
-    {
-    public:
-        Identifier(const string& symbol) : Expr(NodeType::IDENTIFIER), m_symbol(symbol) {}
-        void abstract() const override {}
-
-        const string& Symbol() const { return m_symbol; }
-    private:
-        const string& m_symbol;
     };
 
     class ArrayLiteral : public Expr

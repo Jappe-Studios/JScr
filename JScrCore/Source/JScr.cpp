@@ -1,9 +1,10 @@
 #include "JScr.h"
-#include <future>
+#include "Frontend/Parser.h"
+using namespace JScr::Frontend;
 
 namespace JScr
 {
-	Script::Result::Result(Script* script, const std::list<SyntaxException>& errors) {
+	Script::Result::Result(Script* script, const std::vector<SyntaxException>& errors) : errors(errors), script(script) {
         // Check that if script is null, errors must have more than zero items
         if (script == nullptr && (errors.size() == 0))
         {
@@ -15,15 +16,12 @@ namespace JScr
         {
             throw new std::invalid_argument("If script is not null, errors must be empty");
         }
-
-        this->script = script;
-        this->errors = errors;
 	}
 
-    Script::Result Script::FromFile(const std::string& filedir, const std::list<ExternalResource>& externals = {})
+    Script::Result Script::FromFile(const std::string& filedir, const std::vector<ExternalResource>& externals = {})
     {
         Script script{};
-        std::list<SyntaxException> errors = {};
+        std::vector<SyntaxException> errors = {};
 
         script.m_filedir = filedir;
         script.m_resources = externals;
@@ -33,20 +31,7 @@ namespace JScr
         try
         {
             Parser parser{};
-
-            std::ifstream file(filedir);
-            std::vector<char> buffer;
-            if (file)
-            {
-                file.seekg(0, std::ios::end);
-                std::streampos length = file.tellg();
-                file.seekg(0, std::ios::beg);
-
-                buffer.resize(length);
-                file.read(&buffer[0], length);
-            }
-
-            script.m_program = parser.ProduceAST(script.m_filedir, buffer);
+            script.m_program.emplace(parser.ProduceAST(script.m_filedir));
         }
         catch (SyntaxException e)
         {
@@ -56,19 +41,19 @@ namespace JScr
         return Script::Result(errors.size() < 1 ? &script : NULL, errors);
     }
 
-    void Script::Execute(const std::function<void(int)>& endCallback, const bool& anotherThread = true)
+    void Script::Execute(const std::function<void(int)>& endCallback, bool anotherThread = true)
     {
-        if (m_program == NULL) throw "Cannot execute script while 'm_program' is null! The script needs to be initialised first.";
-        else if (IsRunning) throw "Cannot execute script while it already is running.";
+        if (!m_program.has_value()) throw "Cannot execute script while 'm_program' is null! The script needs to be initialised first.";
+        else if (m_isRunning) throw "Cannot execute script while it already is running.";
 
         m_isRunning = true;
 
-        if (anotherThread)
-        {
-            std::future<void> result = std::async(std::launch::async, []() { Interpreter.EvaluateProgram(m_program, m_resources); });
-            result.wait();
-        } else
-            Interpreter.EvaluateProgram(m_program, resources);
+        //if (anotherThread)
+        //{
+        //    std::future<void> result = std::async(std::launch::async, []() { Interpreter.EvaluateProgram(m_program, m_resources); });
+        //    result.wait();
+        //} else
+        //    Interpreter.EvaluateProgram(m_program, resources);
 
         m_isRunning = false;
     }

@@ -1,6 +1,8 @@
 #pragma once
 #include <unordered_map>
+#include <map>
 #include <optional>
+#include <vector>
 
 namespace JScr::Utils
 {

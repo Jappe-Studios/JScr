@@ -43,7 +43,7 @@ namespace JScr::Frontend
 		char current;
 		file.get(current);
 
-		auto Shift = [&]()
+		std::function<char()> Shift = [&]()
 		{
 			char temp = current;
 			file.get(current);
@@ -57,20 +57,20 @@ namespace JScr::Frontend
 			return temp;
 		};
 
-		auto PeekNextChar = [&]()
+		std::function<int()> PeekNextChar = [&]()
 		{
 			file.clear();
 			return file.peek();
 		};
 
-		auto Push = [&](Lexer::Token tk)
+		std::function<void(Lexer::Token)> Push = [&](Lexer::Token tk)
 		{
 			tokens.insert({ std::move(tk), Range(Vector2i(line, col), Vector2i(line, col + tk.Value().length())) });
 		};
 
 		// Will return true if this is the beginning or the end of a comment.
 		// Shifts twice before returning true to get rid of comment beginning and end parts.
-		auto CommentModifier = [&]()
+		std::function<bool()> CommentModifier = [&]()
 		{
 			if (file.peek() == EOF || file.peek() == EOF)
 			{
@@ -287,6 +287,7 @@ namespace JScr::Frontend
 				}
 				else
 				{
+					file.close();
 					throw SyntaxException(filedir, Vector2i(line, col), "Unrecognized character found in source.");
 				}
 			}

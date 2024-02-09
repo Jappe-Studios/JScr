@@ -1,10 +1,11 @@
 #pragma once
 #include <unordered_map>
+#include <map>
 #include <string>
 #include <fstream>
+#include <functional>
 #include "../Utils/Vector.h"
 #include "../Utils/Range.h"
-#include <map>
 using namespace JScr::Utils;
 
 namespace JScr::Frontend
@@ -53,13 +54,14 @@ namespace JScr::Frontend
         {
         public:
             Token(const std::string& value, const TokenType& type) : m_value(value), m_type(type) {}
-            Token(const char& value, const TokenType& type) : m_value(std::string(1, value)), m_type(type) {}
+            Token(char value, const TokenType& type) : m_value(std::string(1, value)), m_type(type) {}
 
             const std::string& Value() const { return m_value; }
             const TokenType& Type() const { return m_type; }
+
         private:
-            const std::string& m_value;
-            const TokenType& m_type;
+            std::string m_value;
+            TokenType m_type;
         };
 
         static bool IsAlpha(char& src) { return toupper(src) != tolower(src); }

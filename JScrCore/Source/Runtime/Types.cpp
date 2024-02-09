@@ -1,11 +1,10 @@
 #include "Types.h"
 #include "../Utils/StringUtils.h"
 #include "../Utils/MapUtils.h"
+using namespace JScr::Utils;
 
 namespace JScr::Runtime
 {
-    using namespace JScr::Utils;
-
 	const std::unordered_map<Types::Type, std::string> Types::types = {
         { Type::Dynamic(), "dynamic" },
         { Type::Void(),    "void"    },
