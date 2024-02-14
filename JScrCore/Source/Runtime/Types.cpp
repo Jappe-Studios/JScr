@@ -3,6 +3,18 @@
 #include "../Utils/MapUtils.h"
 using namespace JScr::Utils;
 
+namespace std
+{
+    template <>
+    struct hash<JScr::Runtime::Types::Type>
+    {
+        std::size_t operator()(const JScr::Runtime::Types::Type& type) const
+        {
+            return std::hash<unsigned short>()(type.Uid());
+        }
+    };
+}
+
 namespace JScr::Runtime
 {
 	const std::unordered_map<Types::Type, std::string> Types::types = {

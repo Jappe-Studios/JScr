@@ -59,6 +59,11 @@ namespace JScr::Frontend
             const std::string& Value() const { return m_value; }
             const TokenType& Type() const { return m_type; }
 
+            bool operator<(const Token& other) const
+            {
+                return m_value < other.m_value; // or some other meaningful comparison
+            }
+
         private:
             std::string m_value;
             TokenType m_type;

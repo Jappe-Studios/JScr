@@ -9,20 +9,20 @@ namespace JScr::Frontend
 		m_linesAndCols = MapUtils::ValuesOf(tokenDictionary);
 		m_linesAndCols.push_back(m_linesAndCols.back()); // <-- Add duplicate of last item to prevent index out of range exception if syntax error on last token.
 	
-		auto program = Program(filedir, vector<Stmt>());
+		auto program = Program(filedir, vector<std::unique_ptr<Stmt>>());
 
 		this->m_filedir = filedir;
 
 		// Parse until end of file
 		while (NotEOF())
 		{
-			program.Body().push_back(ParseStmt());
+            program.Body().push_back(ParseStmt());
 		}
 
 		return std::move(program);
 	}
 
-	const Stmt& Parser::ParseStmt()
+	std::unique_ptr<Stmt> Parser::ParseStmt()
 	{
         switch (At().Type())
         {
@@ -52,14 +52,19 @@ namespace JScr::Frontend
             {
                 return ParseTypePost();
             }
-            return ParseExpr();
+
+            std::unique_ptr<Expr> parsedExpr = ParseExpr();
+            std::unique_ptr<Stmt> parsedExprAsStmt = std::move(parsedExpr);
+            return parsedExprAsStmt;
         }
         default:
-            return ParseExpr();
+            std::unique_ptr<Expr> parsedExpr = ParseExpr();
+            std::unique_ptr<Stmt> parsedExprAsStmt = std::move(parsedExpr);
+            return parsedExprAsStmt;
         }
 	}
 
-    const Stmt& Parser::ParseImportStmt()
+    const std::unique_ptr<Stmt> Parser::ParseImportStmt()
     {
         Eat();
 
@@ -87,7 +92,7 @@ namespace JScr::Frontend
         }
 
         Expect(Lexer::TokenType::SEMICOLON, "Semicolon expected after import statement.");
-        return ImportStmt(target, alias.value());
+        return std::make_unique<ImportStmt>(ImportStmt(target, alias.value()));
     }
 
     const Parser::ParseTypeCtx& Parser::ParseType()
@@ -105,7 +110,7 @@ namespace JScr::Frontend
             Eat();
 
             auto identifier = Expect(Lexer::TokenType::IDENTIFIER, "Annotation type expected.");
-            vector<Expr> args = {};
+            vector<std::unique_ptr<Expr>> args{};
 
             if (At().Type() == Lexer::TokenType::OPEN_PAREN)
             {
@@ -158,7 +163,6 @@ namespace JScr::Frontend
             else if (At().Type() == Lexer::TokenType::FUNCTION)
             {
                 Eat();
-                functionTypeListTk.emplace({});
 
                 m_outline++;
                 Expect(Lexer::TokenType::OPEN_PAREN, "Open paren expected in lambda function declaration keyword.");
@@ -200,7 +204,7 @@ namespace JScr::Frontend
         return ParseTypeCtxVar(constant, exported, Types::FromString(type.value().Value()).CopyWithLambdaTypes(functionTypeList), annotations);
     }
 
-    const Stmt& Parser::ParseTypePost()
+    const std::unique_ptr<Stmt> Parser::ParseTypePost()
     {
         auto& type = ParseType();
 
@@ -213,52 +217,161 @@ namespace JScr::Frontend
 
             if (tp->getType().Type() == Lexer::TokenType::OBJECT)
                 return ParseObjectStmt(tp->GetAnnotations(), tp->getIdentifierT().Data());
+            if (tp->getType().Type() == Lexer::TokenType::ANNOTATION_OBJECT)
+                return ParseObjectStmt(tp->GetAnnotations(), tp->getIdentifierT().Data(), true);
+            else if (tp->getType().Type() == Lexer::TokenType::ENUM)
+                return ParseEnumStmt(tp->GetAnnotations(), tp->getIdentifierT().Data());
 
+            ThrowSyntaxError("Internal Error: Invalid type.");
         }
+
+        // Get identifier
+        auto identifier = Expect(Lexer::TokenType::IDENTIFIER, "Expected identifier after type for function/variable declarations.");
+        const auto* typeAsVar = dynamic_cast<const ParseTypeCtxVar*>(&type);
+
+        // Return: Function
+        if (At().Type() == Lexer::TokenType::OPEN_PAREN)
+        {
+            if (type.IsConstant()) ThrowSyntaxError("Functions cannot be declared constant.");
+            return ParseFnDeclaration(*typeAsVar, identifier);
+        }
+
+        return ParseVarDeclaration(*typeAsVar, identifier);
     }
 
-    const Stmt& Parser::ParseFnDeclaration(ParseTypeCtxVar type, Lexer::Token name)
+    const std::unique_ptr<Stmt> Parser::ParseFnDeclaration(ParseTypeCtxVar type, Lexer::Token name)
     {
-        // TODO: insert return statement here
+        auto& args = ParseDeclarativeArgs();
+        for (const auto& arg : args)
+        {
+            if (arg.Kind() != NodeType::VAR_DECLARATION)
+                ThrowSyntaxError("Inside function declaration expected parameters to be variable declarations.");
+        }
+
+        auto body = vector<std::unique_ptr<Stmt>>();
+        bool instaRet = false;
+        if (At().Type() == Lexer::TokenType::OPEN_BRACE)
+        {
+            Eat();
+            while (At().Type() != Lexer::TokenType::EOF_TOKEN && At().Type() != Lexer::TokenType::CLOSE_BRACE)
+            {
+                body.push_back(ParseStmt());
+            }
+            Expect(Lexer::TokenType::CLOSE_BRACE, "Closing brace expected inside function declaration.");
+        }
+        else
+        {
+            instaRet = true;
+            Expect(Lexer::TokenType::EQUALS, "Lambda arrow expected: Equals");
+            Expect(Lexer::TokenType::MORE_THAN, "Lambda arrow expected: MoreThan");
+            body.push_back(ParseStmt());
+        }
+
+        auto fn = FunctionDeclaration(type.GetAnnotations(), type.IsExported(), args, name.Value(), type.getType(), body, instaRet);
+        return std::make_unique<FunctionDeclaration>(fn);
     }
+
     const vector<VarDeclaration>& Parser::ParseDeclarativeArgs()
     {
-        // TODO: insert return statement here
+        m_outline++;
+
+        Expect(Lexer::TokenType::OPEN_PAREN, "Expected open parenthesis inside declarative arguments list.");
+        auto args = At().Type() == Lexer::TokenType::CLOSE_PAREN ? vector<VarDeclaration>() : ParseDeclarativeArgsList();
+        Expect(Lexer::TokenType::CLOSE_PAREN, "Expected closing parenthesis inside declarative arguments list.");
+
+        m_outline--;
+        return args;
     }
+
     const vector<VarDeclaration>& Parser::ParseDeclarativeArgsList()
     {
-        // TODO: insert return statement here
+        auto ParseParamVar = [&]()
+        {
+            auto stmt = ParseTypePost();
+
+            if (stmt->Kind() != NodeType::VAR_DECLARATION)
+                ThrowSyntaxError("Variable declaration expected inside declarative parameters list.");
+
+            return *(dynamic_cast<const VarDeclaration*>(&*stmt));
+        };
+
+        vector<VarDeclaration> args = { ParseParamVar() };
+
+        while (At().Type() == Lexer::TokenType::COMMA)
+        {
+            args.push_back(ParseParamVar());
+        }
+
+        return args;
     }
-    const Stmt& Parser::ParseVarDeclaration(ParseTypeCtxVar type, Lexer::Token name)
+
+    const std::unique_ptr<Stmt> Parser::ParseVarDeclaration(ParseTypeCtxVar type, Lexer::Token name)
+    {
+        auto MkNoval = [&]()
+        {
+            if (type.IsConstant())
+                ThrowSyntaxError("Must assign value to constant expression. No value provided.");
+
+            return VarDeclaration(type.GetAnnotations(), false, type.IsExported(), type.getType(), name.Value(), nullopt);
+        };
+
+        if (m_outline == 0 && At().Type() == Lexer::TokenType::SEMICOLON)
+        {
+            Eat();
+            return std::make_unique<VarDeclaration>(MkNoval());
+        }
+        else if (m_outline > 0 && At().Type() != Lexer::TokenType::EQUALS)
+        {
+            return std::make_unique<VarDeclaration>(MkNoval());
+        }
+
+        std::unique_ptr<VarDeclaration> declaration = nullptr;
+        m_outline++;
+        if (At().Type() == Lexer::TokenType::EQUALS)
+        {
+            Eat();
+            declaration = std::make_unique<VarDeclaration>(VarDeclaration(type.GetAnnotations(), type.IsConstant(), type.IsExported(), type.getType(), name.Value(), std::make_optional<Expr&>(*ParseExpr())));
+        }
+        else
+        {
+            declaration = std::make_unique<VarDeclaration>(VarDeclaration(type.GetAnnotations(), type.IsConstant(), type.IsExported(), type.getType(), name.Value(), std::make_optional<Expr&>(*ParseObjectConstructorExpr(type.getType(), true))));
+        }
+        if (m_outline <= 1) Expect(Lexer::TokenType::SEMICOLON, "Outline variable declaration statement must end with semicolon.");
+        m_outline--;
+
+        return std::move(declaration);
+    }
+
+    const std::unique_ptr<Stmt> Parser::ParseObjectStmt(vector<AnnotationUsageDeclaration> annotations, std::string typeIdent, bool annotation)
     {
         // TODO: insert return statement here
     }
-    const Stmt& Parser::ParseObjectStmt(vector<AnnotationUsageDeclaration> annotations, std::string typeIdent, bool annotation)
+    const std::unique_ptr<Stmt> Parser::ParseEnumStmt(vector<AnnotationUsageDeclaration> annotations, std::string typeIdent)
     {
         // TODO: insert return statement here
     }
-    const Stmt& Parser::ParseEnumStmt(vector<AnnotationUsageDeclaration> annotations, std::string typeIdent)
+    const std::unique_ptr<Stmt> Parser::ParseReturnStmt()
     {
         // TODO: insert return statement here
     }
-    const Stmt& Parser::ParseReturnStmt()
+    const std::unique_ptr<Stmt> Parser::ParseDeleteStmt()
     {
         // TODO: insert return statement here
     }
-    const Stmt& Parser::ParseDeleteStmt()
+    const std::unique_ptr<Stmt> Parser::ParseIfElseStmt()
     {
         // TODO: insert return statement here
     }
-    const Stmt& Parser::ParseIfElseStmt()
+    const std::unique_ptr<Stmt> Parser::ParseWhileStmt()
     {
         // TODO: insert return statement here
     }
-    const Stmt& Parser::ParseWhileStmt()
+    const std::unique_ptr<Stmt> Parser::ParseForStmt()
     {
         // TODO: insert return statement here
     }
-    const Stmt& Parser::ParseForStmt()
+    const std::unique_ptr<Expr> Parser::ParseExpr()
     {
-        // TODO: insert return statement here
+        return std::unique_ptr<Expr>();
     }
 }

@@ -9,8 +9,9 @@ using namespace JScr::Frontend;
 
 namespace JScr
 {
-
-	__interface ExternalResource {};
+	class ExternalResource {
+	private: ExternalResource() {}
+	};
 
 	class ExternalResourceFile : public ExternalResource
 	{

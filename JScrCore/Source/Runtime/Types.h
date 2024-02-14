@@ -20,6 +20,22 @@ namespace JScr::Runtime
 
 			const bool isLambda;
 
+			bool Equals(const Type& other) const
+			{
+				if (Uid() != other.Uid()) return false;
+				if (Child() && !Child()->Equals(*other.Child())) return false;
+				if (Data() != other.Data()) return false;
+				if (LambdaTypes().size() != other.LambdaTypes().size()) return false;
+				for (size_t i = 0; i < LambdaTypes().size(); ++i)
+				{
+					if (!LambdaTypes()[i].Equals(other.LambdaTypes()[i])) return false;
+				}
+				return true;
+			}
+
+			bool operator==(const Type& other) const { return this->Equals(other); }
+			bool operator!=(const Type& other) const { return !(*this == other); }
+			bool operator<(const Type& other) const { return false; }
 			Types::Type CopyWithLambdaTypes(const vector<Type>& lambdaTypes) { return Type(this->m_uid, lambdaTypes, this->m_child, this->m_data); };
 
 		public:

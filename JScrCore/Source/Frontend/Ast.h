@@ -66,14 +66,14 @@ namespace JScr::Frontend
     class Program : public Stmt
     {
     public:
-        Program(const string& fileDir, const std::vector<Stmt>& body) : Stmt(NodeType::PROGRAM), m_fileDir(fileDir), m_body(body) {}
+        Program(const string& fileDir, std::vector<std::unique_ptr<Stmt>> body) : Stmt(NodeType::PROGRAM), m_fileDir(fileDir), m_body(std::move(body)) {}
         void abstract() const override {}
 
         const string& FileDir() const         { return m_fileDir; }
-        std::vector<Stmt>& Body()             { return m_body; }
+        std::vector<std::unique_ptr<Stmt>>& Body()             { return m_body; }
     private:
         const string& m_fileDir;
-        std::vector<Stmt> m_body;
+        std::vector<std::unique_ptr<Stmt>> m_body;
     };
 
     class ImportStmt : public Stmt
@@ -92,20 +92,20 @@ namespace JScr::Frontend
     class AnnotationUsageDeclaration : public Stmt
     {
     public:
-        AnnotationUsageDeclaration(const string& ident, const std::vector<Expr>& args) : Stmt(NodeType::ANNOTATION_USAGE_DECLARATION), m_ident(ident), m_args(args) {}
+        AnnotationUsageDeclaration(const string& ident, const std::vector<std::unique_ptr<Expr>>& args) : Stmt(NodeType::ANNOTATION_USAGE_DECLARATION), m_ident(ident), m_args(args) {}
         void abstract() const override {}
 
         const string& Ident() const { return m_ident; };
-        const std::vector<Expr>& Args() const { return m_args; };
+        const std::vector<std::unique_ptr<Expr>>& Args() const { return m_args; };
     private:
         const string& m_ident;
-        const std::vector<Expr>& m_args;
+        const std::vector<std::unique_ptr<Expr>>& m_args;
     };
 
     class VarDeclaration : public Stmt
     {
     public:
-        VarDeclaration(const std::vector<AnnotationUsageDeclaration> annotatedWith, const bool& constant, const bool& export_, const Types::Type& type, const string& identifier, const Expr& value)
+        VarDeclaration(const std::vector<AnnotationUsageDeclaration> annotatedWith, const bool& constant, const bool& export_, const Types::Type& type, const string& identifier, const std::optional<Expr>& value)
             : Stmt(NodeType::VAR_DECLARATION), m_annotatedWith(annotatedWith), m_constant(constant), m_export(export_), m_type(type), m_identifier(identifier), m_value(value)
         {}
         void abstract() const override {}
@@ -115,20 +115,20 @@ namespace JScr::Frontend
         const bool& Export() const { return m_export; }
         const Types::Type& Type() const { return m_type; }
         const string& Identifier() const { return m_identifier; }
-        const Expr& Value() const { return m_value; }
+        const std::optional<Expr>& Value() const { return m_value; }
     private:
         const std::vector<AnnotationUsageDeclaration>& m_annotatedWith;
         const bool& m_constant;
         const bool& m_export;
         const Types::Type& m_type;
         const string& m_identifier;
-        const Expr& m_value;
+        const std::optional<Expr>& m_value;
     };
 
     class FunctionDeclaration : public Stmt
     {
     public:
-        FunctionDeclaration(const std::vector<AnnotationUsageDeclaration>& annotatedWith, const bool& export_, const std::vector<VarDeclaration>& parameters, const string& identifier, const Types::Type& type, const std::vector<Stmt>& body, const bool& instantReturn)
+        FunctionDeclaration(const std::vector<AnnotationUsageDeclaration>& annotatedWith, const bool& export_, const std::vector<VarDeclaration>& parameters, const string& identifier, const Types::Type& type, const std::vector<std::unique_ptr<Stmt>>& body, const bool& instantReturn)
             : Stmt(NodeType::FUNCTION_DECLARATION), m_annotatedWith(annotatedWith), m_export(export_), m_parameters(parameters), m_identifier(identifier), m_type(type), m_body(body), m_instantReturn(instantReturn)
         {}
         void abstract() const override {}
@@ -138,7 +138,7 @@ namespace JScr::Frontend
         const std::vector<VarDeclaration>& Parameters() const { return m_parameters; }
         const string& Identifier() const { return m_identifier; } // <-- name
         const Types::Type& Type() const { return m_type; }
-        const std::vector<Stmt>& Body() const { return m_body; }
+        const std::vector<std::unique_ptr<Stmt>>& Body() const { return m_body; }
         const bool& InstantReturn() const { return m_instantReturn; }
     private:
         const std::vector<AnnotationUsageDeclaration>& m_annotatedWith;
@@ -146,7 +146,7 @@ namespace JScr::Frontend
         const std::vector<VarDeclaration>& m_parameters;
         const string& m_identifier;
         const Types::Type& m_type;
-        const std::vector<Stmt>& m_body;
+        const std::vector<std::unique_ptr<Stmt>>& m_body;
         const bool& m_instantReturn;
     };
 
@@ -218,42 +218,42 @@ namespace JScr::Frontend
         class IfBlock
         {
         public:
-            IfBlock(const Expr& condition, const std::vector<Stmt>& body) : m_condition(condition), m_body(body) {}
+            IfBlock(const Expr& condition, const std::vector<std::unique_ptr<Stmt>>& body) : m_condition(condition), m_body(body) {}
 
             const Expr& Condition() const { return m_condition; }
-            const std::vector<Stmt>& Body() const { return m_body; }
+            const std::vector<std::unique_ptr<Stmt>>& Body() const { return m_body; }
         private:
             const Expr& m_condition;
-            const std::vector<Stmt>& m_body;
+            const std::vector<std::unique_ptr<Stmt>>& m_body;
         };
 
-        IfElseDeclaration(const std::vector<IfBlock>& blocks, const std::vector<Stmt>& elseBody) : Stmt(NodeType::IF_ELSE_DECLARATION), m_blocks(blocks), m_elseBody(elseBody) {}
+        IfElseDeclaration(const std::vector<IfBlock>& blocks, const std::vector<std::unique_ptr<Stmt>>& elseBody) : Stmt(NodeType::IF_ELSE_DECLARATION), m_blocks(blocks), m_elseBody(elseBody) {}
         void abstract() const override {}
 
         const std::vector<IfBlock>& Blocks() const { return m_blocks; }
-        const std::vector<Stmt>& ElseBody() const { return m_elseBody; }
+        const std::vector<std::unique_ptr<Stmt>>& ElseBody() const { return m_elseBody; }
     private:
         const std::vector<IfBlock>& m_blocks;
-        const std::vector<Stmt>& m_elseBody;
+        const std::vector<std::unique_ptr<Stmt>>& m_elseBody;
     };
 
     class WhileDeclaration : public Stmt
     {
     public:
-        WhileDeclaration(const Expr& condition, const std::vector<Stmt>& body) : Stmt(NodeType::WHILE_DECLARATION), m_condition(condition), m_body(body) {}
+        WhileDeclaration(const Expr& condition, const std::vector<std::unique_ptr<Stmt>>& body) : Stmt(NodeType::WHILE_DECLARATION), m_condition(condition), m_body(body) {}
         void abstract() const override {}
 
         const Expr& Condition() const { return m_condition; }
-        const std::vector<Stmt>& Body() const { return m_body; }
+        const std::vector<std::unique_ptr<Stmt>>& Body() const { return m_body; }
     private:
         const Expr& m_condition;
-        const std::vector<Stmt>& m_body;
+        const std::vector<std::unique_ptr<Stmt>>& m_body;
     };
 
     class ForDeclaration : public Stmt
     {
     public:
-        ForDeclaration(const Stmt& declaration, const Expr& condition, const Expr& action, const std::vector<Stmt>& body)
+        ForDeclaration(const Stmt& declaration, const Expr& condition, const Expr& action, const std::vector<std::unique_ptr<Stmt>>& body)
             : Stmt(NodeType::FOR_DECLARATION), m_declaration(declaration), m_condition(condition), m_action(action), m_body(body)
         {}
         void abstract() const override {}
@@ -261,12 +261,12 @@ namespace JScr::Frontend
         const Stmt& Declaration() const { return m_declaration; }
         const Expr& Condition() const { return m_condition; }
         const Expr& Action() const { return m_action; }
-        const std::vector<Stmt>& Body() const { return m_body; }
+        const std::vector<std::unique_ptr<Stmt>>& Body() const { return m_body; }
     private:
         const Stmt& m_declaration;
         const Expr& m_condition;
         const Expr& m_action;
-        const std::vector<Stmt>& m_body;
+        const std::vector<std::unique_ptr<Stmt>>& m_body;
     };
 
     class Expr : public Stmt
@@ -327,13 +327,13 @@ namespace JScr::Frontend
     class CallExpr : public Expr
     {
     public:
-        CallExpr(const std::vector<Expr>& args, const Expr& caller) : Expr(NodeType::CALL_EXPR), m_args(args), m_caller(caller) {}
+        CallExpr(const std::vector<std::unique_ptr<Expr>>& args, const Expr& caller) : Expr(NodeType::CALL_EXPR), m_args(args), m_caller(caller) {}
         void abstract() const override {}
 
-        const std::vector<Expr>& Args() const { return m_args; }
+        const std::vector<std::unique_ptr<Expr>>& Args() const { return m_args; }
         const Expr& Caller() const { return m_caller; }
     private:
-        const std::vector<Expr>& m_args;
+        const std::vector<std::unique_ptr<Expr>>& m_args;
         const Expr& m_caller;
     };
 
@@ -405,27 +405,27 @@ namespace JScr::Frontend
     class LambdaExpr : public Expr
     {
     public:
-        LambdaExpr(const std::vector<Identifier>& paramIdents, const std::vector<Stmt>& body, const bool& instantReturn) : Expr(NodeType::LAMBDA_EXPR), m_paramIdents(paramIdents), m_body(body), m_instantReturn(instantReturn) {}
+        LambdaExpr(const std::vector<Identifier>& paramIdents, const std::vector<std::unique_ptr<Stmt>>& body, const bool& instantReturn) : Expr(NodeType::LAMBDA_EXPR), m_paramIdents(paramIdents), m_body(body), m_instantReturn(instantReturn) {}
         void abstract() const override {}
 
         const std::vector<Identifier>& ParamIdents() const { return m_paramIdents; }
-        const std::vector<Stmt>& Body() const { return m_body; }
+        const std::vector<std::unique_ptr<Stmt>>& Body() const { return m_body; }
         const bool& InstantReturn() const { return m_instantReturn; }
     private:
         const std::vector<Identifier>& m_paramIdents;
-        const std::vector<Stmt>& m_body;
+        const std::vector<std::unique_ptr<Stmt>>& m_body;
         const bool& m_instantReturn;
     };
 
     class ArrayLiteral : public Expr
     {
     public:
-        ArrayLiteral(const std::vector<Expr>& value) : Expr(NodeType::ARRAY_LITERAL), m_value(value) {}
+        ArrayLiteral(const std::vector<std::unique_ptr<Expr>>& value) : Expr(NodeType::ARRAY_LITERAL), m_value(value) {}
         void abstract() const override {}
 
-        const std::vector<Expr>& Value() const { return m_value; }
+        const std::vector<std::unique_ptr<Expr>>& Value() const { return m_value; }
     private:
-        const std::vector<Expr>& m_value;
+        const std::vector<std::unique_ptr<Expr>>& m_value;
     };
 
     class NumericLiteral : public Expr
