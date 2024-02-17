@@ -3,6 +3,7 @@
 #include <functional>
 #include <any>
 #include <memory>
+#include <iostream>
 #include "Ast.h"
 #include "../Runtime/Types.h"
 #include "Lexer.h"
@@ -144,37 +145,37 @@ namespace JScr::Frontend
 
     private:
         std::unique_ptr<Stmt> ParseStmt();
-        const std::unique_ptr<Stmt> ParseImportStmt();
-        const ParseTypeCtx& ParseType();
-        const std::unique_ptr<Stmt> ParseTypePost();
-        const std::unique_ptr<Stmt> ParseFnDeclaration(ParseTypeCtxVar type, Lexer::Token name);
-        const vector<VarDeclaration>& ParseDeclarativeArgs();
-        const vector<VarDeclaration>& ParseDeclarativeArgsList();
-        const std::unique_ptr<Stmt> ParseVarDeclaration(ParseTypeCtxVar type, Lexer::Token name);
-        const std::unique_ptr<Stmt> ParseObjectStmt(vector<AnnotationUsageDeclaration> annotations, string typeIdent, bool annotation = false);
-        const std::unique_ptr<Stmt> ParseEnumStmt(vector<AnnotationUsageDeclaration> annotations, string typeIdent);
-        const std::unique_ptr<Stmt> ParseReturnStmt();
-        const std::unique_ptr<Stmt> ParseDeleteStmt();
-        const std::unique_ptr<Stmt> ParseIfElseStmt();
-        const std::unique_ptr<Stmt> ParseWhileStmt();
-        const std::unique_ptr<Stmt> ParseForStmt();
+        std::unique_ptr<Stmt> ParseImportStmt();
+        ParseTypeCtx& ParseType();
+        std::unique_ptr<Stmt> ParseTypePost();
+        std::unique_ptr<Stmt> ParseFnDeclaration(ParseTypeCtxVar type, Lexer::Token name);
+        vector<VarDeclaration>& ParseDeclarativeArgs();
+        vector<VarDeclaration>& ParseDeclarativeArgsList();
+        std::unique_ptr<Stmt> ParseVarDeclaration(ParseTypeCtxVar type, Lexer::Token name);
+        std::unique_ptr<Stmt> ParseObjectStmt(vector<AnnotationUsageDeclaration> annotations, string typeIdent, bool annotation = false);
+        std::unique_ptr<Stmt> ParseEnumStmt(vector<AnnotationUsageDeclaration> annotations, string typeIdent);
+        std::unique_ptr<Stmt> ParseReturnStmt();
+        std::unique_ptr<Stmt> ParseDeleteStmt();
+        std::unique_ptr<Stmt> ParseIfElseStmt();
+        std::unique_ptr<Stmt> ParseWhileStmt();
+        std::unique_ptr<Stmt> ParseForStmt();
 
-        const std::unique_ptr<Expr> ParseExpr();
-        const std::unique_ptr<Expr> ParseAssignmentExpr();
-        const std::unique_ptr<Expr> ParseObjectConstructorExpr(std::any targetVariableIdent, bool tviAsType = false);
-        const std::unique_ptr<Expr> ParseArrayExpr();
-        const std::unique_ptr<Expr> ParseLambdaFuncExpr();
-        const std::unique_ptr<Expr> ParseBoolExpr();
-        const std::unique_ptr<Expr> ParseComparisonExpr();
-        const std::unique_ptr<Expr> ParseAdditiveExpr();
-        const std::unique_ptr<Expr> ParseMultiplicitaveExpr();
-        const std::unique_ptr<Expr> ParseUnaryExpr();
-        const std::unique_ptr<Expr> ParseCallMemberExpr();
-        const std::unique_ptr<Expr> ParseIndexExpr(Expr caller);
-        const std::unique_ptr<Expr> ParseCallExpr(Expr caller);
+        std::unique_ptr<Expr> ParseExpr();
+        std::unique_ptr<Expr> ParseAssignmentExpr();
+        std::unique_ptr<Expr> ParseObjectConstructorExpr(std::any targetVariableIdent, bool tviAsType = false);
+        std::unique_ptr<Expr> ParseArrayExpr();
+        std::unique_ptr<Expr> ParseLambdaFuncExpr();
+        std::unique_ptr<Expr> ParseBoolExpr();
+        std::unique_ptr<Expr> ParseComparisonExpr();
+        std::unique_ptr<Expr> ParseAdditiveExpr();
+        std::unique_ptr<Expr> ParseMultiplicitaveExpr();
+        std::unique_ptr<Expr> ParseUnaryExpr();
+        std::unique_ptr<Expr> ParseCallMemberExpr();
+        std::unique_ptr<Expr> ParseIndexExpr(std::unique_ptr<Expr> caller);
+        std::unique_ptr<Expr> ParseCallExpr(std::unique_ptr<Expr> caller);
         vector<std::unique_ptr<Expr>> ParseArgs(optional<std::function<void()>> preEnd = nullopt);
-        const vector<std::unique_ptr<Expr>>& ParseArgumentsList();
-        const std::unique_ptr<Expr> ParseMemberExpr();
-        const std::unique_ptr<Expr> ParsePrimaryExpr();
+        vector<std::unique_ptr<Expr>> ParseArgumentsList();
+        std::unique_ptr<Expr> ParseMemberExpr();
+        std::unique_ptr<Expr> ParsePrimaryExpr();
     };
 }

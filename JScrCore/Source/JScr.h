@@ -5,12 +5,15 @@
 #include <vector>
 #include "Frontend/SyntaxException.h"
 #include "Frontend/Ast.h"
+#include "Frontend/Lexer.h"
+#include "Frontend/Parser.h"
 using namespace JScr::Frontend;
 
 namespace JScr
 {
 	class ExternalResource {
-	private: ExternalResource() {}
+	private:
+		ExternalResource() {}
 	};
 
 	class ExternalResourceFile : public ExternalResource

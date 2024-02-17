@@ -57,4 +57,9 @@ namespace JScr
 
         m_isRunning = false;
     }
+
+    void Script::BuildStandardLibraryResources(Script& script)
+    {
+
+    }
 }

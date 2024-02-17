@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <any>
+#include <optional>
 #include "../Runtime/Types.h"
 
 using std::string;
@@ -105,7 +106,7 @@ namespace JScr::Frontend
     class VarDeclaration : public Stmt
     {
     public:
-        VarDeclaration(const std::vector<AnnotationUsageDeclaration> annotatedWith, const bool& constant, const bool& export_, const Types::Type& type, const string& identifier, const std::optional<Expr>& value)
+        VarDeclaration(const std::vector<AnnotationUsageDeclaration> annotatedWith, const bool& constant, const bool& export_, const Types::Type& type, const string& identifier, const std::optional<std::unique_ptr<Expr>>& value)
             : Stmt(NodeType::VAR_DECLARATION), m_annotatedWith(annotatedWith), m_constant(constant), m_export(export_), m_type(type), m_identifier(identifier), m_value(value)
         {}
         void abstract() const override {}
@@ -115,14 +116,14 @@ namespace JScr::Frontend
         const bool& Export() const { return m_export; }
         const Types::Type& Type() const { return m_type; }
         const string& Identifier() const { return m_identifier; }
-        const std::optional<Expr>& Value() const { return m_value; }
+        const std::optional<std::unique_ptr<Expr>>& Value() const { return m_value; }
     private:
         const std::vector<AnnotationUsageDeclaration>& m_annotatedWith;
         const bool& m_constant;
         const bool& m_export;
         const Types::Type& m_type;
         const string& m_identifier;
-        const std::optional<Expr>& m_value;
+        const std::optional<std::unique_ptr<Expr>>& m_value;
     };
 
     class FunctionDeclaration : public Stmt
@@ -486,15 +487,15 @@ namespace JScr::Frontend
     class Property : public Expr
     {
     public:
-        Property(const string& key, const Types::Type& type, const Expr& value) : Expr(NodeType::PROPERTY), m_key(key), m_type(type), m_value(value) {}
+        Property(const string& key, const optional<Types::Type> type, const std::optional<std::unique_ptr<Expr>> value) : Expr(NodeType::PROPERTY), m_key(key), m_type(type), m_value(value) {}
         void abstract() const override {}
 
         const string& Key() const { return m_key; }
-        const Types::Type& Type() const { return m_type; }
-        const Expr& Value() const { return m_value; }
+        const optional<Types::Type> Type() const { return m_type; }
+        const std::optional<std::unique_ptr<Expr>>& Value() const { return m_value; }
     private:
         const string& m_key;
-        const Types::Type& m_type;
-        const Expr& m_value;
+        const optional<Types::Type> m_type;
+        const std::optional<std::unique_ptr<Expr>>& m_value;
     };
 }
